@@ -95,8 +95,19 @@
                 return;
             }
 
-            // Set the lid value
-            const lid = 2;
+            // Extract the lid value from the webpage
+            const sttitleElement = document.querySelector('span.sttitle a[href*="reading-list/?list="]');
+            if (!sttitleElement) {
+                console.error('List ID element not found');
+                return;
+            }
+            const lidMatch = sttitleElement.href.match(/list=(\d+)/);
+            const lid = lidMatch ? lidMatch[1] : null;
+
+            if (!lid) {
+                console.error('List ID not found in URL');
+                return;
+            }
 
             // Construct the GET request URL
             const url = `https://www.novelupdates.com/readinglist_manualupdate.php?tdata=${encodeURIComponent(tdata)}&sid=${sid}&lid=${lid}`;
@@ -106,18 +117,27 @@
                 .then(response => response.text()) // Use response.text() instead of response.json()
                 .then(data => {
                     console.log('Success:', data);
+
                     // Update a part of the webpage with the response data
                     const spanElement = document.querySelector('span[style="font-size: 14px; color:green;"]');
                     if (spanElement) {
                         spanElement.textContent = ` (${tdata})`;
                     }
+
                     // Clear the text box
                     inputBox.value = '';
+
+                    // Flash the button to indicate success
+                    button.classList.add('success');
+                    setTimeout(() => {
+                        button.classList.remove('success');
+                    }, 500); // Remove the class after 500ms
                 })
                 .catch((error) => {
                     console.error('Error:', error);
                 });
         });
+
     }
 
     // Function to add the search bar to the DOM
@@ -138,58 +158,70 @@
     function injectStyles() {
         const style = document.createElement('style');
         style.textContent = `
-            #newSearchBar {
-                margin-left: 15px;
-                width: 10rem;
-                height: 2rem;
-                padding: 1rem;
-                border-radius: 4px;
-                border: 1px solid #ccc;
-                box-sizing: border-box;
-                font-size: 1rem;
-                color: #666;
-                font-weight: 400;
-                font-family: 'Open Sans';
-            }
-            #newSearchBar::placeholder {
-                color: #999; /* Change this color to make the placeholder text more visible */
-                opacity: 1; /* Override default opacity */
-            }
-        `;
+        #newSearchBar {
+            margin-left: 15px;
+            width: 10rem;
+            height: 2rem;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 1rem;
+            color: #666;
+            font-weight: 400;
+            font-family: 'Open Sans';
+        }
+        #newSearchBar::placeholder {
+            color: #999;
+            opacity: 1;
+        }
+        .input-button.success {
+            background-color: #4CAF50; /* Green background to indicate success */
+            color: white;
+        }
+    `;
+    
         document.head.appendChild(style);
     }
 
-    // Function to observe the DOM for the target element
-    function observeDOM(targetId, callback, parentClass) {
+    // Async function to observe the DOM for the target element
+    async function observeDOM(targetId, callback, parentClass) {
         const parentElement = document.querySelector(parentClass);
         if (!parentElement) return;
 
-        const targetElement = document.getElementById(targetId);
+        let targetElement = document.getElementById(targetId);
         if (targetElement) {
             callback(targetElement);
             return;
         }
 
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
+        const observer = new MutationObserver((mutations, observer) => {
+            for (const mutation of mutations) {
                 if (mutation.addedNodes.length) {
-                    const targetElement = document.getElementById(targetId);
+                    targetElement = document.getElementById(targetId);
                     if (targetElement) {
                         callback(targetElement);
                         observer.disconnect(); // Stop observing once the element is found
+                        break;
                     }
                 }
-            });
+            }
         });
 
         observer.observe(parentElement, { childList: true, subtree: true });
+
+        // Wait until the target element is found
+        while (!targetElement) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Polling interval
+            targetElement = document.getElementById(targetId);
+        }
     }
 
     // Main function to initialize the script
     function init() {
         injectStyles();
         observeDOM('menu_username_right', addSearchBar, '.l-subheader-h.i-widgets.i-cf'); // Using the parent class
-        if (isUserLoggedIn()) {
+        if (isUserLoggedIn() && window.location.href.startsWith('https://www.novelupdates.com/series/')) {
             createCustomListModifier();
         }
     }
