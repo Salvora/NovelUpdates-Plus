@@ -48,21 +48,52 @@
         return searchBar;
     }
 
-
     function isCustomList() {
-        const ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        return !!ChapterIdentifier; // Return true if element exists, otherwise false
+    }
+
+
+    function ExtractChapterPlaceholder() {
         if (ChapterIdentifier) {
-            const raw_chapter_number = ChapterIdentifier.textContent;
-            const start = raw_chapter_number.indexOf('(');
-            const end = raw_chapter_number.indexOf(')');
-            if (start !== -1 && end !== -1 && start < end) {
-                custom_chapter_number = raw_chapter_number.substring(start + 1, end);
-                return true; // Return true if the value inside the parentheses is found
+            const raw_chapter_number = ChapterIdentifier.textContent.trim();
+    
+            // Regular expression with named capture groups
+            const match = raw_chapter_number.match(/\(?(?:v|vol)?(?<vol>\d+)?(?:c|ch)?(?<ch>\d+(\.\d+)?)(?<chsfx>[a-zA-Z]?)\)?/i);
+    
+            if (match) {
+                // Extract the volume number (only if it is preceded by 'v' or 'vol')
+                const volume_number = match.groups.vol ? parseInt(match.groups.vol, 10) : null; // Volume number or null
+    
+                // Determine the chapter number and suffix
+                const chapter_number = match.groups.ch ? parseFloat(match.groups.ch) : null; // Chapter number (float if needed)
+                const chapter_suffix = match.groups.chsfx || null; // Capture optional chapter suffix
+    
+                custom_chapter_number = {
+                    vol_number: volume_number, // Volume number or null
+                    ch_number: chapter_number, // Chapter number (float if needed)
+                    ch_suffix: chapter_suffix // Chapter suffix or null
+                };
+    
+                console.log(custom_chapter_number);
+                return true;
             }
         }
-        custom_chapter_number = null; // Reset the global variable if not found
-        return false; // Return false if the element or the value is not found
+    
+        custom_chapter_number = null; // Reset if no match is found
+        return false;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 
     function CreateInputBox() {
@@ -350,6 +381,7 @@
         if (isUserLoggedIn() && window.location.href.startsWith('https://www.novelupdates.com/series/')) {
             if(isCustomList()) {
                 createCustomListModifier();
+                ExtractChapterPlaceholder();
             }
         }
     }
