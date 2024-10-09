@@ -17,7 +17,11 @@
     const searchUrlTemplate = 'https://www.novelupdates.com/series-finder/?sf=1&sh=${query}&sort=abc&order=desc';
 
     let ChapterIdentifier;
-
+    let inputBox;
+    let button;
+    let navlinksfragment;
+    let Navlinks;
+    let custom_chapter_number;
 
     // Function to handle search when "Enter" is pressed
     function handleSearch(event) {
@@ -46,35 +50,45 @@
 
 
     function isCustomList() {
-        ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
-        return !!ChapterIdentifier; // Return true if element exists, otherwise false
+        const ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        if (ChapterIdentifier) {
+            const raw_chapter_number = ChapterIdentifier.textContent;
+            const start = raw_chapter_number.indexOf('(');
+            const end = raw_chapter_number.indexOf(')');
+            if (start !== -1 && end !== -1 && start < end) {
+                custom_chapter_number = raw_chapter_number.substring(start + 1, end);
+                return true; // Return true if the value inside the parentheses is found
+            }
+        }
+        custom_chapter_number = null; // Reset the global variable if not found
+        return false; // Return false if the element or the value is not found
     }
 
 
     function CreateInputBox() {
         // Create the input box
-        const inputBox = document.createElement('input');
+        inputBox = document.createElement('input');
         inputBox.type = 'text';
         inputBox.className = 'input-box';
         inputBox.placeholder = 'Enter Chapter Number...';
-        return inputBox;
+        return;
     }
 
     function CreateSubmitButton() {
         // Create the button
-        const button = document.createElement('button');
+        button = document.createElement('button');
         button.className = 'submit-button';
         button.textContent = 'Submit';
-        return button;
+        return;
     }
 
     // Function to create custom list navigation links
     function CreateCustomListNavigationLinks() {
         // Create a document fragment to hold the links
-        const fragment = document.createDocumentFragment();
+        navlinksfragment = document.createDocumentFragment();
     
         // Create the links
-        const links = [
+        Navlinks = [
             { text: '-1', title: 'Decrement Chapter -1', delta: -1 },
             { text: '-5', title: 'Decrement Chapter -5', delta: -5 },
             { text: '-10', title: 'Decrement Chapter -10', delta: -10 },
@@ -83,28 +97,18 @@
             { text: '+10', title: 'Increment Chapter +10', delta: 10 }
         ];
     
-        links.forEach(link => {
+        Navlinks.forEach(link => {
             const a = document.createElement('a');
             a.href = 'javascript:void(0)';
             a.title = link.title;
             a.innerHTML = `<u>${link.text}</u>`;
             a.className = 'custom-link'; // Add a class to each link
-            fragment.appendChild(a); // Append the link to the fragment
+            navlinksfragment.appendChild(a); // Append the link to the fragment
+            link.element = a; // Store the created element in the link object
         });
-    
-        return fragment; // Return the document fragment containing the links
+        return;
     }
 
-
-    function CreateNavigationLinkListeners(links) {
-        links.forEach(link => {
-            link.addEventListener('click', async () => {
-                const delta = link.navigate;
-                const result = await ChangeChapter(tdata);
-            });
-        });
-
-    }
 
     // Function to create the custom list modifier box
     function createCustomListModifier() {
@@ -113,15 +117,15 @@
         const container = document.createElement('div');
         container.className = 'submit-button-container';
 
-        const inputBox = CreateInputBox();
-        const button = CreateSubmitButton();
-        const linksFragment = CreateCustomListNavigationLinks(); // Get the links fragment
+        CreateInputBox();
+        CreateSubmitButton();
+        CreateCustomListNavigationLinks(); // Get the links fragment
 
 
         // Append the input box and button to the container
         container.appendChild(inputBox);
         container.appendChild(button);
-        container.appendChild(linksFragment); // Append the links fragment to the container
+        container.appendChild(navlinksfragment); // Append the links fragment to the container
 
         // Find the <h4 class="seriesother"> element
         const seriesOtherElement = document.querySelector('h4.seriesother');
@@ -130,13 +134,28 @@
             seriesOtherElement.appendChild(container);
         }
 
-        // Add event listener to the button
+        CustomListEventListeners();
+
+
+    }
+
+    function CustomListEventListeners() {
+        // Add event listener to the submit button
         button.addEventListener('click', async () => {
             const tdata = inputBox.value.trim();
             if (!tdata) return;
-        
-            const result = await ChangeChapter(tdata);
-            updateUI(ChapterIdentifier, tdata, inputBox, button, result);
+            await ChangeChapter(tdata);
+        });
+    
+        // Add event listeners to the navigation links
+        Navlinks.forEach(link => {
+            const a = link.element; // Use the stored element
+            if (a) {
+                a.addEventListener('click', async () => {
+                    const delta = link.delta;
+                    await ChangeChapter(delta);
+                });
+            }
         });
     }
 
@@ -146,7 +165,8 @@
         const lid = extractLid();
         if (!sid || !lid) {
             console.error('Failed to retrieve required values (SID or LID).');
-            return false;
+            updateUI(ChapterIdentifier, chapter, inputBox, button, false);
+            return;
         }
     
         const updateURL = `https://www.novelupdates.com/readinglist_manualupdate.php?tdata=${encodeURIComponent(chapter)}&sid=${sid}&lid=${lid}`;
@@ -154,6 +174,8 @@
         // Create an AbortController to handle the timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Set timeout to 5000ms (5 seconds)
+    
+        let success = false;
     
         try {
             const response = await fetch(updateURL, { signal: controller.signal });
@@ -163,14 +185,15 @@
             }
             const data = await response.text();
             console.log('Success:', data);
-            return true;
+            success = true;
         } catch (error) {
             if (error.name === 'AbortError') {
                 console.error('Fetch request timed out');
             } else {
                 console.error('Error:', error);
             }
-            return false;
+        } finally {
+            updateUI(ChapterIdentifier, chapter, inputBox, button, success);
         }
     }
 
