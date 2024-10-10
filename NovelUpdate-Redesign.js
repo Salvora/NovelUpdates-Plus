@@ -49,18 +49,8 @@
     }
 
     function isCustomList() {
-        const ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
-        if (ChapterIdentifier) {
-            const raw_chapter_number = ChapterIdentifier.textContent;
-            const start = raw_chapter_number.indexOf('(');
-            const end = raw_chapter_number.indexOf(')');
-            if (start !== -1 && end !== -1 && start < end) {
-                custom_chapter_number = raw_chapter_number.substring(start + 1, end);
-                return true; // Return true if the value inside the parentheses is found
-            }
-        }
-        custom_chapter_number = null; // Reset the global variable if not found
-        return false; // Return false if the element or the value is not found
+        ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        return !!ChapterIdentifier; // Return true if element exists, otherwise false
     }
 
 
