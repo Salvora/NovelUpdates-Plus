@@ -59,18 +59,20 @@
             const raw_chapter_number = ChapterIdentifier.textContent.trim();
     
             // Regular expression with named capture groups
-            const match = raw_chapter_number.match(/\(?(?:v|vol)?(?<vol>\d+)?(?:c|ch)?(?<ch>\d+(\.\d+)?)(?<chsfx>[a-zA-Z]?)\)?/i);
+            const match = raw_chapter_number.match(/^\(?(?:v(?<vol>\d+))?(?<chpfx>c|ch)?(?<ch>\d+(?:\.\d+)?)(?<chsfx>[a-zA-Z0-9\s]*)\)?/i);
     
             if (match) {
                 // Extract the volume number (only if it is preceded by 'v' or 'vol')
                 const volume_number = match.groups.vol ? parseInt(match.groups.vol, 10) : null; // Volume number or null
     
                 // Determine the chapter number and suffix
+                const chapter_prefix = match.groups.chpfx || null; // Chapter prefix
                 const chapter_number = match.groups.ch ? parseFloat(match.groups.ch) : null; // Chapter number (float if needed)
                 const chapter_suffix = match.groups.chsfx || null; // Capture optional chapter suffix
     
                 custom_chapter_number = {
                     vol_number: volume_number, // Volume number or null
+                    ch_prefix: chapter_prefix, // Chapter prefix or null
                     ch_number: chapter_number, // Chapter number (float if needed)
                     ch_suffix: chapter_suffix // Chapter suffix or null
                 };
@@ -83,18 +85,6 @@
         custom_chapter_number = null; // Reset if no match is found
         return false;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
 
     function CreateInputBox() {
         // Create the input box
@@ -184,7 +174,7 @@
             if (a) {
                 a.addEventListener('click', async () => {
                     const delta = link.delta;
-                    await ChangeChapter(delta);
+                    await ChangeChapter(custom_chapter_number.ch_number + delta);
                 });
             }
         });
@@ -211,6 +201,7 @@
         try {
             const response = await fetch(updateURL, { signal: controller.signal });
             clearTimeout(timeoutId); // Clear the timeout if the request completes in time
+            ExtractChapterPlaceholder();
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -224,7 +215,9 @@
                 console.error('Error:', error);
             }
         } finally {
-            updateUI(ChapterIdentifier, chapter, inputBox, button, success);
+            const reconstructedChapter = `${custom_chapter_number.ch_prefix || ''}${chapter}${custom_chapter_number.ch_suffix || ''}`;
+            updateUI(ChapterIdentifier, reconstructedChapter, inputBox, button, success);
+            ExtractChapterPlaceholder();
         }
     }
 
@@ -380,12 +373,14 @@
         observeDOM('menu_username_right', addSearchBar, '.l-subheader-h.i-widgets.i-cf'); // Using the parent class
         if (isUserLoggedIn() && window.location.href.startsWith('https://www.novelupdates.com/series/')) {
             if(isCustomList()) {
-                createCustomListModifier();
                 ExtractChapterPlaceholder();
+                createCustomListModifier();
+                
             }
         }
     }
 
     // Run the main function
     init();
+
 })();
