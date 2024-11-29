@@ -16,7 +16,7 @@
     // Search URL template
     const searchUrlTemplate = 'https://www.novelupdates.com/series-finder/?sf=1&sh=${query}&sort=abc&order=desc';
 
-    let ChapterIdentifier;
+    let chapterIdentifier;
     let inputBox;
     let button;
     let navlinksfragment;
@@ -48,15 +48,83 @@
         return searchBar;
     }
 
-    function isCustomList() {
-        ChapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
-        return !!ChapterIdentifier; // Return true if element exists, otherwise false
+    async function isCustomList() {
+        // Check for the primary condition
+        const chapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        if (chapterIdentifier) {
+            return true; // Return true if chapterIdentifier is found
+        }
+    
+        // Check for the secondary condition
+        const lid = extractLid();
+        if (!lid) {
+            return false; // Return false if lid is not found
+        }
+    
+        const listURL = `${window.location.origin}/reading-list/?list=${lid}`;
+        const controller = new AbortController();
+        const signal = controller.signal;
+    
+        const manualString = 'class="stEdit"';
+        const normalString = 'id="bmicon"';
+    
+        try {
+            const response = await fetch(listURL, {
+                method: 'GET',
+                credentials: 'include',
+                signal: signal
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+    
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let partialContent = '';
+            let { value: chunk, done: readerDone } = await reader.read();
+    
+            while (!readerDone) {
+                partialContent += decoder.decode(chunk, { stream: true });
+    
+                if (partialContent.includes(manualString)) {
+                    controller.abort(); // Abort the fetch request
+                    return false; // manualString found
+                }
+    
+                if (partialContent.includes(normalString)) {
+                    controller.abort(); // Abort the fetch request
+                    return true; // normalString found
+                }
+    
+                ({ value: chunk, done: readerDone } = await reader.read());
+            }
+    
+            // Handle the last chunk
+            partialContent += decoder.decode();
+            if (partialContent.includes(manualString)) {
+                return false;
+            }
+            if (partialContent.includes(normalString)) {
+                return true;
+            }
+    
+            return false; // Neither string found
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                // Fetch aborted due to finding one of the strings
+                return false; // default to false if manualString causes abortion
+            } else {
+                console.error('Error fetching or processing data:', error);
+                return false; // Return false on error
+            }
+        }
     }
 
 
     function ExtractChapterPlaceholder() {
-        if (ChapterIdentifier) {
-            const raw_chapter_number = ChapterIdentifier.textContent.trim();
+        if (chapterIdentifier) {
+            const raw_chapter_number = chapterIdentifier.textContent.trim();
     
             // Regular expression with named capture groups
             const match = raw_chapter_number.match(/^\(?(?:v(?<vol>\d+))?(?<chpfx>c|ch)?(?<ch>\d+(?:\.\d+)?)(?<chsfx>[a-zA-Z0-9\s]*)\)?/i);
@@ -186,7 +254,7 @@
         const lid = extractLid();
         if (!sid || !lid) {
             console.error('Failed to retrieve required values (SID or LID).');
-            updateUI(ChapterIdentifier, chapter, inputBox, button, false);
+            updateUI(chapterIdentifier, chapter, inputBox, button, false);
             return;
         }
     
@@ -216,7 +284,7 @@
             }
         } finally {
             const reconstructedChapter = `${custom_chapter_number.ch_prefix || ''}${chapter}${custom_chapter_number.ch_suffix || ''}`;
-            updateUI(ChapterIdentifier, reconstructedChapter, inputBox, button, success);
+            updateUI(chapterIdentifier, reconstructedChapter, inputBox, button, success);
             ExtractChapterPlaceholder();
         }
     }
@@ -368,19 +436,22 @@
     }
 
     // Main function to initialize the script
-    function init() {
+    async function init() {
         injectStyles();
         observeDOM('menu_username_right', addSearchBar, '.l-subheader-h.i-widgets.i-cf'); // Using the parent class
         if (isUserLoggedIn() && window.location.href.startsWith('https://www.novelupdates.com/series/')) {
-            if(isCustomList()) {
+            if(await isCustomList()) {
                 ExtractChapterPlaceholder();
                 createCustomListModifier();
-                
+            } else {
+                console.log('Custom list not found, continuing execution...');
             }
         }
     }
 
-    // Run the main function
-    init();
+    // Run the main function with error handling
+    init().catch(error => {
+        console.error('Error during initialization:', error);
+    });
 
 })();
