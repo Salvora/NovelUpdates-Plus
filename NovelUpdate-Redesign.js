@@ -50,7 +50,7 @@
 
     async function isCustomList() {
         // Check for the primary condition
-        const chapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
+        chapterIdentifier = document.querySelector('span[style="font-size: 14px; color:green;"]');
         if (chapterIdentifier) {
             return true; // Return true if chapterIdentifier is found
         }
@@ -89,12 +89,14 @@
     
                 if (partialContent.includes(manualString)) {
                     controller.abort(); // Abort the fetch request
-                    return false; // manualString found
+                    console.log('Custom list detected while fetching partially.');
+                    return true; // manualString found
                 }
     
                 if (partialContent.includes(normalString)) {
                     controller.abort(); // Abort the fetch request
-                    return true; // normalString found
+                    console.log('Normal list detected while fetching partially.');
+                    return false; // normalString found
                 }
     
                 ({ value: chunk, done: readerDone } = await reader.read());
@@ -103,10 +105,12 @@
             // Handle the last chunk
             partialContent += decoder.decode();
             if (partialContent.includes(manualString)) {
-                return false;
+                console.log('Custom list detected.');
+                return true;
             }
             if (partialContent.includes(normalString)) {
-                return true;
+                console.log('Normal list detected.');
+                return false;
             }
     
             return false; // Neither string found
