@@ -9,3 +9,5 @@ TO DO:
 // Custom Reading List Update
 // Direct Links
 // Reading lists
+// Series highlighting
+// Language Coloring
