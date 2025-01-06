@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        NovelUpdates-Plus
 // @namespace   https://github.com/Salvora
-// @version     1.0
+// @version     1.0.0
 // @grant       GM_addStyle
 // @grant       GM_getResourceText
 // @grant       GM_setValue
@@ -9,6 +9,11 @@
 // @grant       GM_registerMenuCommand
 // @grant       GM_unregisterMenuCommand
 // @resource    customCSS https://github.com/Salvora/Novel-Ezy-Coin/raw/refs/heads/main/Resources/styles.css?v=1.0.0
+// @author      Salvora
+// @homepageURL https://github.com/Salvora/Doby-Buy
+// @updateURL   https://github.com/Salvora/Doby-Buy/raw/refs/heads/main/Doby-Buy.user.js
+// @downloadURL https://github.com/Salvora/Doby-Buy/raw/refs/heads/main/Doby-Buy.user.js
+// @supportURL  https://github.com/Salvora/Doby-Buy/issues
 // @description Redesign Novelupdates to better manipulate
 // @match       https://www.novelupdates.com/*
 // @grant       none
