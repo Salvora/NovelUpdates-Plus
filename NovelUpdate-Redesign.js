@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name        NovelUpdates-Plus
 // @namespace   https://github.com/Salvora
-// @version     1.0.0
+// @version     1.0.1
 // @grant       GM_addStyle
 // @grant       GM_getResourceText
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_registerMenuCommand
 // @grant       GM_unregisterMenuCommand
-// @resource    customCSS https://github.com/Salvora/Novel-Ezy-Coin/raw/refs/heads/main/Resources/styles.css?v=1.0.0
+// @resource    customCSS https://github.com/Salvora/NovelUpdates-Plus/raw/refs/heads/main/Resources/styles.css?v=1.0.0
 // @author      Salvora
 // @homepageURL https://github.com/Salvora/Doby-Buy
 // @updateURL   https://github.com/Salvora/Doby-Buy/raw/refs/heads/main/Doby-Buy.user.js
@@ -16,14 +16,13 @@
 // @supportURL  https://github.com/Salvora/Doby-Buy/issues
 // @description Redesign Novelupdates to better manipulate
 // @match       https://www.novelupdates.com/*
-// @grant       none
 // ==/UserScript==
 
 (function () {
-  "use strict";
+  ("use strict");
 
   // Configuration variable to control the search bar
-  const enableSearchBar = true;
+  let enableSearchBar = true;
 
   // Search URL template
   const searchUrlTemplate =
@@ -33,8 +32,10 @@
   let inputBox;
   let button;
   let navlinksfragment;
-  let Navlinks;
+  let navlinks;
   let custom_chapter_number;
+
+  GM_addStyle(GM_getResourceText("customCSS"));
 
   // Function to handle search when "Enter" is pressed
   function handleSearch(event) {
@@ -204,7 +205,7 @@
     navlinksfragment = document.createDocumentFragment();
 
     // Create the links
-    Navlinks = [
+    navlinks = [
       { text: "-1", title: "Decrement Chapter -1", delta: -1 },
       { text: "-5", title: "Decrement Chapter -5", delta: -5 },
       { text: "-10", title: "Decrement Chapter -10", delta: -10 },
@@ -213,7 +214,7 @@
       { text: "+10", title: "Increment Chapter +10", delta: 10 },
     ];
 
-    Navlinks.forEach((link) => {
+    navlinks.forEach((link) => {
       const a = document.createElement("a");
       a.href = "javascript:void(0)";
       a.title = link.title;
@@ -259,7 +260,7 @@
     });
 
     // Add event listeners to the navigation links
-    Navlinks.forEach((link) => {
+    navlinks.forEach((link) => {
       const a = link.element; // Use the stored element
       if (a) {
         a.addEventListener("click", async () => {
@@ -395,105 +396,84 @@
     return usernameElement !== null;
   }
 
-  // Function to inject CSS styles
-  function injectStyles() {
-    const style = document.createElement("style");
-    style.textContent = `
-        #newSearchBar {
-            margin-left: 15px;
-            width: 10rem;
-            height: 2rem;
-            padding: 1rem;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 1rem;
-            color: #666;
-            font-weight: 400;
-            font-family: 'Open Sans';
-        }
-        #newSearchBar::placeholder {
-            color: #999;
-            opacity: 1;
-        }
-        .submit-button.success {
-            background-color: #4CAF50; /* Green background to indicate success */
-            color: white;
-        }
-        .submit-button.failure {
-            background-color: #f44336; /* Red background to indicate failure */
-            color: white;
-        }
-        .submit-button {
-            margin-right: 1rem; /* Add top margin for spacing */
-        }
-        .custom-link {
-            margin-right: 1rem; /* Add right margin for spacing */
-        }
-        .input-box::placeholder {
-            color: #999;
-            opacity: 1;
-        }
-        `;
-    document.head.appendChild(style);
-  }
+  /**
+   * Observes the DOM for the presence of an element with the specified ID within a parent class.
+   * @param {string} targetId - The ID of the target element to observe.
+   * @param {string} parentClass - The class selector of the parent element.
+   * @param {number} timeout - Optional timeout in milliseconds (default: 10000ms).
+   * @returns {Promise<Element>} - Resolves with the target element when found.
+   */
+  function observeDOM(targetId, parentClass, timeout = 10000) {
+    return new Promise((resolve, reject) => {
+      const parentElement = document.querySelector(parentClass);
+      if (!parentElement) {
+        return reject(
+          new Error(`Parent element with class "${parentClass}" not found.`)
+        );
+      }
 
-  // Async function to observe the DOM for the target element
-  async function observeDOM(targetId, callback, parentClass) {
-    const parentElement = document.querySelector(parentClass);
-    if (!parentElement) return;
+      let targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        return resolve(targetElement);
+      }
 
-    let targetElement = document.getElementById(targetId);
-    if (targetElement) {
-      callback(targetElement);
-      return;
-    }
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.addedNodes.length) {
-          targetElement = document.getElementById(targetId);
-          if (targetElement) {
-            callback(targetElement);
-            observer.disconnect(); // Stop observing once the element is found
-            break;
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.id === targetId) {
+              observer.disconnect();
+              return resolve(node);
+            }
           }
         }
-      }
+      });
+
+      observer.observe(parentElement, { childList: true, subtree: true });
+
+      // Implement timeout to avoid infinite waiting
+      setTimeout(() => {
+        observer.disconnect();
+        reject(
+          new Error(
+            `Timeout: Element with ID "${targetId}" not found within ${timeout}ms.`
+          )
+        );
+      }, timeout);
     });
-
-    observer.observe(parentElement, { childList: true, subtree: true });
-
-    // Wait until the target element is found
-    while (!targetElement) {
-      await new Promise((resolve) => setTimeout(resolve, 100)); // Polling interval
-      targetElement = document.getElementById(targetId);
-    }
   }
-
-  // Main function to initialize the script
+  function isSeriesPage() {
+    return window.location.href.startsWith(
+      "https://www.novelupdates.com/series/"
+    );
+  }
   async function init() {
-    injectStyles();
-    observeDOM(
-      "menu_username_right",
-      addSearchBar,
-      ".l-subheader-h.i-widgets.i-cf"
-    ); // Using the parent class
-    if (
-      isUserLoggedIn() &&
-      window.location.href.startsWith("https://www.novelupdates.com/series/")
-    ) {
-      if (await isCustomList()) {
+    try {
+      const targetElement = await observeDOM(
+        "menu_username_right",
+        ".l-subheader-h.i-widgets.i-cf",
+        10000 // Optional: customize timeout as needed
+      );
+      addSearchBar(targetElement);
+
+      if (!isUserLoggedIn()) {
+        return;
+      }
+
+      if (!isSeriesPage()) {
+        return;
+      }
+
+      const customListExists = await isCustomList();
+      if (customListExists) {
         ExtractChapterPlaceholder();
         createCustomListModifier();
       } else {
         console.log("Custom list not found, continuing execution...");
       }
+    } catch (error) {
+      console.error("Initialization error:", error);
     }
   }
 
-  // Run the main function with error handling
-  init().catch((error) => {
-    console.error("Error during initialization:", error);
-  });
+  init();
 })();

@@ -1,0 +1,35 @@
+#newSearchBar {
+  margin-left: 15px;
+  width: 10rem;
+  height: 2rem;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: #666;
+  font-weight: 400;
+  font-family: "Open Sans";
+}
+#newSearchBar::placeholder {
+  color: #999;
+  opacity: 1;
+}
+.submit-button.success {
+  background-color: #4caf50; /* Green background to indicate success */
+  color: white;
+}
+.submit-button.failure {
+  background-color: #f44336; /* Red background to indicate failure */
+  color: white;
+}
+.submit-button {
+  margin-right: 1rem; /* Add top margin for spacing */
+}
+.custom-link {
+  margin-right: 1rem; /* Add right margin for spacing */
+}
+.input-box::placeholder {
+  color: #999;
+  opacity: 1;
+}
