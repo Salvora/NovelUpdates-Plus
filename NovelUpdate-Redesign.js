@@ -63,7 +63,6 @@
     
         const listURL = `${window.location.origin}/reading-list/?list=${lid}`;
         const controller = new AbortController();
-        const signal = controller.signal;
     
         const manualString = 'class="stEdit"';
         const normalString = 'id="bmicon"';
@@ -72,7 +71,7 @@
             const response = await fetch(listURL, {
                 method: 'GET',
                 credentials: 'include',
-                signal: signal
+                signal: controller.signal
             });
     
             if (!response.ok) {
