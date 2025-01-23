@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        NovelUpdates-Plus
 // @namespace   https://github.com/Salvora
-// @version     1.0.1
+// @version     1.0.2
 // @grant       GM_addStyle
 // @grant       GM_getResourceText
 // @grant       GM_setValue
@@ -322,7 +322,7 @@
     }
   }
 
-  // Extract SID value from the page
+  // Extract SID (Series ID) value from the page
   function extractSid() {
     const sidElement = document.querySelector(
       'i[class*="fa-sticky-note-o seriesnotes sid"]'
@@ -337,7 +337,7 @@
     return sidClass ? sidClass.replace("sid", "") : null;
   }
 
-  // Extract LID value from the page
+  // Extract LID (List ID) value from the page
   function extractLid() {
     const sttitleElement = document.querySelector(
       'span.sttitle a[href*="reading-list/?list="]'
