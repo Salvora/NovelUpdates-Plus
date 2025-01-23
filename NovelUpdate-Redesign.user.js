@@ -1,21 +1,22 @@
 // ==UserScript==
 // @name        NovelUpdates-Plus
 // @namespace   https://github.com/Salvora
-// @version     1.0.2
+// @version     1.0.4
 // @grant       GM_addStyle
 // @grant       GM_getResourceText
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_registerMenuCommand
 // @grant       GM_unregisterMenuCommand
+// @match       https://www.novelupdates.com/*
 // @resource    customCSS https://github.com/Salvora/NovelUpdates-Plus/raw/refs/heads/main/Resources/styles.css?v=1.0.0
 // @author      Salvora
-// @homepageURL https://github.com/Salvora/Doby-Buy
-// @updateURL   https://github.com/Salvora/Doby-Buy/raw/refs/heads/main/Doby-Buy.user.js
-// @downloadURL https://github.com/Salvora/Doby-Buy/raw/refs/heads/main/Doby-Buy.user.js
-// @supportURL  https://github.com/Salvora/Doby-Buy/issues
+// @icon        https://github.com/Salvora/NovelUpdates-Plus/raw/refs/heads/main/Images/NU+_Icon.png#sha256=b5fd8289a4e7379fd7958cd5937ebeb93c12458b3e4ed7230a79aefc892aa6e7
+// @homepageURL https://github.com/Salvora/NovelUpdates-Plus
+// @updateURL   https://github.com/Salvora/NovelUpdates-Plus/raw/refs/heads/main/NovelUpdate-Redesign.user.js
+// @downloadURL https://github.com/Salvora/NovelUpdates-Plus/raw/refs/heads/main/NovelUpdate-Redesign.user.js
+// @supportURL  https://github.com/Salvora/NovelUpdates-Plus/issues
 // @description Redesign Novelupdates to better manipulate
-// @match       https://www.novelupdates.com/*
 // ==/UserScript==
 
 (function () {
